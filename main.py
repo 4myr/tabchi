@@ -19,8 +19,8 @@ class colors:
     UNDERLINE = '\033[4m'
 
 # Handle multiple instances without any duplicate
-# instance = input('Enter your instance name [example: amyr]: ') if len(sys.argv) < 2 else sys.argv[1]
-instance = "amyr"
+instance = input('Enter your instance name [example: amyr]: ') if len(sys.argv) < 2 else sys.argv[1]
+# instance = "amyr"
 instance_path = os.path.abspath("Sessions/{0}".format(instance))
 
 
@@ -90,7 +90,7 @@ async def newMessage(event):
 
         for matchNum, match in enumerate(matches, start=1):
             link = match.group()
-            
+
             if not r.sismember("All_Links", link):
                 r.sadd("All_Links", link)
                 r.sadd("Links", link)
