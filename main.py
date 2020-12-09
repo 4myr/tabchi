@@ -40,12 +40,18 @@ if not r.ping():
     exit();
 
 # Initilize variables
-CRON_TIME = int( r.get( cnf("CRON_TIME") ) ) or ( 120 and r.set( cnf("CRON_TIME"), 120 ) and print("CRON_TIME has been set to default (120)") )
-MAX_GROUPS = int( r.get( cnf("MAX_GROUPS") ) ) or ( 150 and r.set( cnf("MAX_GROUPS"), 150 ) and print("MAX_GROUPS has been set to default (150)") )
+CRON_TIME = r.get( cnf("CRON_TIME") ) or ( 120 and r.set( cnf("CRON_TIME"), 120 ) and print("CRON_TIME has been set to default (120)") )
+JOIN_TIME = r.get( cnf("JOIN_TIME") ) or ( 200 and r.set( cnf("JOIN_TIME"), 200 ) and print("JOIN_TIME has been set to default (200)") )
+MAX_GROUPS = r.get( cnf("MAX_GROUPS") ) or ( 150 and r.set( cnf("MAX_GROUPS"), 150 ) and print("MAX_GROUPS has been set to default (150)") )
 BOT_USER = r.get( cnf("BOT_USER") ) or None # configured BOT_USER will replace on adverstiment texts for {BOT_USER}
+
+CRON_TIME = int(CRON_TIME)
+JOIN_TIME = int(JOIN_TIME)
+MAX_GROUPS = int(MAX_GROUPS)
 
 welcome_text = "------ WELCOME ------\n"
 welcome_text += "Redis:         " + colors.OKGREEN + "is ok!" + colors.ENDC + "\n"
+welcome_text += "JOIN_TIME:     " + colors.UNDERLINE + str(JOIN_TIME) + colors.ENDC + "\n" 
 welcome_text += "CRON_TIME:     " + colors.UNDERLINE + str(CRON_TIME) + colors.ENDC + "\n" 
 welcome_text += "MAX_GROUPS:    " + colors.UNDERLINE + str(MAX_GROUPS) + colors.ENDC + "\n" 
 welcome_text += "BOT_USER:      " + colors.UNDERLINE + str(BOT_USER) + colors.ENDC + "\n\n" 
@@ -91,10 +97,10 @@ async def newMessage(event):
         for matchNum, match in enumerate(matches, start=1):
             link = match.group()
 
-            if not r.sismember("All_Links", link):
-                r.sadd("All_Links", link)
-                r.sadd("Links", link)
-                print(link + " saved!")
+            # if not r.sismember( cnf("All_Links"), link):
+            r.sadd( cnf("All_Links"), link)
+            r.sadd( cnf("Links"), link)
+            print(link + " saved!")
 
     # Stats
     elif msg == '!stats':
@@ -135,6 +141,11 @@ async def newMessage(event):
             r.set( cnf('MAX_GROUPS'), MAX_GROUPS)
             done = "Bot max groups has been set to {0}".format(config_value)
 
+        elif config_name == "join" and config_value.isdigit():
+            JOIN_TIME = int(config_value)
+            r.set( cnf('JOIN_TIME'), JOIN_TIME)
+            done = "Bot join time has been set to {0}".format(config_value)
+
         elif config_name == "bot":
             BOT_USER = str(config_value)
             r.set( cnf('BOT_USER'), BOT_USER)
@@ -152,12 +163,31 @@ async def newMessage(event):
 # Create cron event
 def create_cron_event():    
     loop = asyncio.get_event_loop()
-    cron_task = cron()
-    task = loop.create_task(cron_task)
+    task = loop.create_task( join_groups_task() )
+    task = loop.create_task( adverstiment_task() )
     loop.run_until_complete(task)
 
-# All codes need cron write here
-async def cron():
+# Join a group every JOIN_TIME seconds
+async def join_groups_task():
+    while True:
+        link = r.spop( cnf("Links") )
+        if link == None:
+            break
+
+        link = link.decode()
+        link = link.replace('\n', '')
+        link_hash = link.rsplit('/', 1)[-1]
+
+        import_chat = await client(functions.messages.ImportChatInviteRequest(
+            hash=link_hash
+        ))
+        group_id = import_chat.chats[0].id
+        r.sadd( cnf("Chats"), group_id)
+        print("A group added, chat_id: {0}".format(str(group_id)))
+        await asyncio.sleep(JOIN_TIME)
+
+# Send Adverstiment every CRON_TIME seconds
+async def adverstiment_task():
     while True:
         await asyncio.sleep(CRON_TIME)
 
