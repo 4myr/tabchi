@@ -5,7 +5,7 @@ from telethon import functions, types, errors
 
 import config
 import redis
-import sys, os, asyncio
+import sys, os, asyncio, psutil, re
 
 class colors:
     HEADER = '\033[95m'
@@ -75,12 +75,30 @@ print("Bot({0}) is running...".format(instance))
 # An event to handle new messages
 @client.on(events.NewMessage)
 async def newMessage(event):
-    cmd_message = str(event.raw_text)
-    cmd_params = cmd_message.split(' ')
+    msg = str(event.raw_text)
+    params = msg.split(' ')
     me = await client.get_me()
 
+    # Ping
+    if msg == '!ping':
+        await event.reply("**PONG!**")
+    
+    # Detecting links & save to join later
+    if ('t.me' in msg or 'telegram.me' in msg) and '/joinchat' in msg and 'AAAAA' not in msg:
+        regex = r"\b(t.me|telegram.me)\/(joinchat)\/[-A-Z0-9+&@#\/%?=~_|$!:,.;]*[A-Z0-9+&@#\/%=~_|$]"
+        matches = re.finditer(regex, msg, re.IGNORECASE)
+
+        for matchNum, match in enumerate(matches, start=1):
+            link = match.group()
+            
+            if not r.sismember("All_Links", link):
+                r.sadd("All_Links", link)
+                r.sadd("Links", link)
+                print(link + " saved!")
+
     # Stats
-    if cmd_message == '!stats':
+    elif msg == '!stats':
+        message = await event.reply("**Loading stats...**")
         dialogs = await client.get_dialogs()
         count_all = 0
         count_users = 0
@@ -99,21 +117,49 @@ async def newMessage(event):
             elif d.is_channel:
                 count_channels += 1
 
-        response_text = "**My Stats**\n\nUsers: `{}`\nGroups: `{}`\nChannels: `{}`\nBots: `{}`\nAll: `{}`\n\n**RAM Usage: %{}**\n**CPU Usage: %{}**\n**Disk Usage: %{}**".format(count_users, count_groups, count_channels, count_bots, count_all, psutil.virtual_memory()[2], psutil.cpu_percent(), psutil.disk_usage('/')[3])
-        await event.reply(response_text)
+        stats = "**My Stats**\n\nUsers: `{}`\nGroups: `{}`\nChannels: `{}`\nBots: `{}`\nAll: `{}`\n\n**RAM Usage: %{}**\n**CPU Usage: %{}**\n**Disk Usage: %{}**".format(count_users, count_groups, count_channels, count_bots, count_all, psutil.virtual_memory()[2], psutil.cpu_percent(), psutil.disk_usage('/')[3])
+        await client.edit_message(message, stats)
+    
+    # Set configs
+    elif '!set ' in msg and isinstance(params[1], str) and params[2]:
+        config_name = params[1]
+        config_value = params[2]
+
+        if config_name == "cron" and config_value.isdigit():
+            CRON_TIME = int(config_value)
+            r.set( cnf('CRON_TIME'), CRON_TIME)
+            done = "Bot cron time has been set to {0}".format(config_value)
+
+        elif config_name == "groups" and config_value.isdigit():
+            MAX_GROUPS = int(config_value)
+            r.set( cnf('MAX_GROUPS'), MAX_GROUPS)
+            done = "Bot max groups has been set to {0}".format(config_value)
+
+        elif config_name == "bot":
+            BOT_USER = str(config_value)
+            r.set( cnf('BOT_USER'), BOT_USER)
+            done = "Bot adverstiment user has been set to {0}".format(config_value)
+        
+        if done:
+            print(done)
+            await event.reply(done)
+        else:
+            await event.reply("Wrong key or value entered!")
+    else:
+        if isinstance(event.to_id, types.PeerUser):
+            await event.reply("Adverstiment here!")
 
 # Create cron event
 def create_cron_event():    
     loop = asyncio.get_event_loop()
-    cron_task = cron(2)
+    cron_task = cron()
     task = loop.create_task(cron_task)
     loop.run_until_complete(task)
 
 # All codes need cron write here
-async def cron(time):
+async def cron():
     while True:
-        print("Task working!")
-        await asyncio.sleep(time)
+        await asyncio.sleep(CRON_TIME)
 
 try:
     client.start()
