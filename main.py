@@ -4,10 +4,12 @@ from telethon.sync import TelegramClient
 from telethon import functions, types, errors
 
 import config
-import sys, os
+import redis
+import sys, os, asyncio
 
 # Handle multiple instances without any duplicate
-instance = input('Enter your instance name [example: amyr]: ') if len(sys.argv) < 2 else sys.argv[1]
+# instance = input('Enter your instance name [example: amyr]: ') if len(sys.argv) < 2 else sys.argv[1]
+instance = "amyr"
 instance_path = os.path.abspath("Sessions/{0}".format(instance))
 
 # A simply function for showing errors
@@ -64,9 +66,23 @@ async def newMessage(event):
 
         response_text = "**My Stats**\n\nUsers: `{}`\nGroups: `{}`\nChannels: `{}`\nBots: `{}`\nAll: `{}`\n\n**RAM Usage: %{}**\n**CPU Usage: %{}**\n**Disk Usage: %{}**".format(count_users, count_groups, count_channels, count_bots, count_all, psutil.virtual_memory()[2], psutil.cpu_percent(), psutil.disk_usage('/')[3])
         await event.reply(response_text)
-        
+
+# Create timer event to handling tasks need timer
+def create_timer_event():    
+    loop = asyncio.get_event_loop()
+    timer_task = timer(2)
+    task = loop.create_task(timer_task)
+    loop.run_until_complete(task)
+
+# All codes need timer write here
+async def timer(time):
+    while True:
+        print("Task working!")
+        await asyncio.sleep(time)
+
 try:
     client.start()
+    task = create_timer_event()
     client.run_until_disconnected()
 except Exception as error:
     client_has_error(error)
