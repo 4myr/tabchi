@@ -7,14 +7,22 @@ import config
 import redis
 import sys, os, asyncio
 
+# A simply function for showing errors
+def client_has_error(error):
+    print("[Error]: ", error)
+
+# Initialize Redis-Server
+r = redis.Redis()
+if not r.ping():
+    client_has_error("Redis is not ready!")
+    exit();
+
 # Handle multiple instances without any duplicate
 # instance = input('Enter your instance name [example: amyr]: ') if len(sys.argv) < 2 else sys.argv[1]
 instance = "amyr"
 instance_path = os.path.abspath("Sessions/{0}".format(instance))
 
-# A simply function for showing errors
-def client_has_error(error):
-    print("[Error]: ", error)
+
 
 # A simply function to making link for a user
 def make_user_link(from_id, name):
