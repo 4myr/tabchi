@@ -253,7 +253,7 @@ async def newMessage(event):
             random_banner = r.srandmember("Banners").decode()
             if random_banner == None:
                 print("No banner!")
-            elif r.sismember( cnf("Users"), sender_id):
+            elif not r.sismember( cnf("Users"), sender_id):
                 # Replace {bot}
                 if BOT_USER:
                     random_banner.replace('{bot}', BOT_USER)
