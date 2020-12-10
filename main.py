@@ -199,6 +199,9 @@ async def newMessage(event):
         if config == 'adv':
             r.delete("Adverstiments")
             done = "Adverstiments has been cleared!"
+        if config == 'banner':
+            r.delete("Banners")
+            done = "Banners has been cleared!"
         elif config == 'users':
             r.delete(cnf("Users"))
             done = "Users received adverstiment has been cleared!"
