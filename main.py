@@ -226,20 +226,20 @@ async def newMessage(event):
     elif '!banner' in msg:
         args = msg.split(' ', 1)
         
-        # Get all adverstiment texts list
+        # Get all banners list
         if len(args) == 1:
-            advs = r.smembers("Banners")
-            advs = list(advs)
+            banners = r.smembers("Banners")
+            banners = list(banners)
             texts = ""
-            for x in advs:
+            for x in banners:
                 texts += "\n▫️ {0}".format(x.decode())
             await event.reply("Your banners texts:\n{0}".format(texts))
         
-        # Add new adverstiment text
+        # Add new banner text
         else:
             banner_text = args[1]
             r.sadd("Banners", banner_text)
-            done = "New banner text added:\n\n{0}".format(adverstiment_text)
+            done = "New banner text added:\n\n{0}".format(banner_text)
             print(done)
             await event.reply(done)
 
