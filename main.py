@@ -243,7 +243,11 @@ async def newMessage(event):
     else:
         # if a user sent a message in private, sending specific adverstiment
         if isinstance(event.to_id, types.PeerUser):
-            await event.reply("Adverstiment here!")
+            random_banner = r.srandmember("Banners").decode()
+            if random_banner == None:
+                print("No banner!")
+            else:
+                await event.reply(random_banner)
 
 # Create cron event
 def create_cron_events():    
