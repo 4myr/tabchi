@@ -149,9 +149,8 @@ async def newMessage(event):
         saved_links = r.scard("All_Links")
         saved_groups = r.scard( cnf("Chats") )
         saved_users = r.scard( cnf("Users") )
-        stats = "**My Stats**\n\nUsers: `{}`\nGroups: `{}`\nSaved Groups: `{}`\nChannels: `{}`\nBots: `{}`\nAll: `{}`\n\n**RAM Usage: %{}**\n**CPU Usage: %{}**\n**Disk Usage: %{}**".format(count_users, count_groups, saved_groups, count_channels, count_bots, count_all, psutil.virtual_memory()[2], psutil.cpu_percent(), psutil.disk_usage('/')[3])
+        stats = "**My Stats**\n\nUsers: `{}`\nGroups: `{}`\nSaved Groups: `{}`\nChannels: `{}`\nBots: `{}`\nAll: `{}`\n\n**RAM Usage: %{}**\n**CPU Usage: %{}**\n**Disk Usage: %{}**\n\n".format(count_users, count_groups, saved_groups, count_channels, count_bots, count_all, psutil.virtual_memory()[2], psutil.cpu_percent(), psutil.disk_usage('/')[3])
         stats += "**Configs:**\n\nMax Groups: `{}`\nJoin Delay: `{}`\nAdverstiment Delay: `{}`\nBot User: {}\nRandom Adverstiments: `{}`\nRandom Banners: `{}`\nSaved Links: `{}`\nUsers Received Adverstiment: `{}`".format(MAX_GROUPS, JOIN_TIME, CRON_TIME, BOT_USER, random_adverstiments, random_banners, saved_links, saved_users)
-        print(stats)
         await client.edit_message(message, stats)
     
     # Set configs
