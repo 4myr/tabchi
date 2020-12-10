@@ -223,7 +223,7 @@ async def newMessage(event):
             await event.reply(done)
 
     # Banners management (this banners will send randomly to user on sending private message)
-    elif '!adv' in msg:
+    elif '!banner' in msg:
         args = msg.split(' ', 1)
         
         # Get all adverstiment texts list
