@@ -270,57 +270,59 @@ def create_cron_events():
 # Join a group every JOIN_TIME seconds
 async def join_groups_task():
     while True:
-        if r.scard( cnf('Chats') ) < MAX_GROUPS:
-            # Pop a link to join that
-            link = r.spop("Links")
-            if link == None:
-                print("No link!")
-            else:
-                link = link.decode()
-                link = link.replace('\n', '')
-                link_hash = link.rsplit('/', 1)[-1]
-
-                # Joining to group
-                import_chat = await client(functions.messages.ImportChatInviteRequest(
-                    hash=link_hash
-                ))
-
-                group_id = import_chat.chats[0].id
-                group_title = import_chat.chats[0].title
-
-                # Check if group title contains blocked titles
-                is_blocked = False
-                for b in BLOCKED_GROUPS:
-                    if b in group_title:
-                        is_blocked = True
-                
-                if not is_blocked:
-                    r.sadd( cnf("Chats"), group_id)
-                    print("A group ({0}) added, chat_id: {1}".format(group_title, str(group_id)))
+        try:
+            if r.scard( cnf('Chats') ) < MAX_GROUPS:
+                # Pop a link to join that
+                link = r.spop("Links")
+                if link == None:
+                    print("No link!")
                 else:
-                    await client.delete_dialog(group_id)
-                    print("A group ({0}) has detected as blocked & deleted.".format(group_title))
-        else:
-            print("Join action fails because of max groups.")
+                    link = link.decode()
+                    link = link.replace('\n', '')
+                    link_hash = link.rsplit('/', 1)[-1]
+
+                    # Joining to group
+                    import_chat = await client(functions.messages.ImportChatInviteRequest(
+                        hash=link_hash
+                    ))
+
+                    group_id = import_chat.chats[0].id
+                    group_title = import_chat.chats[0].title
+
+                    # Check if group title contains blocked titles
+                    is_blocked = False
+                    for b in BLOCKED_GROUPS:
+                        if b in group_title:
+                            is_blocked = True
+                    
+                    if not is_blocked:
+                        r.sadd( cnf("Chats"), group_id)
+                        print("A group ({0}) added, chat_id: {1}".format(group_title, str(group_id)))
+                    else:
+                        await client.delete_dialog(group_id)
+                        print("A group ({0}) has detected as blocked & deleted.".format(group_title))
+            else:
+                print("Join action fails because of max groups.")
+        except Exception as error
+            client_has_error("Error in join_groups_task: " + error)
         await asyncio.sleep(JOIN_TIME)
 
 # Send Adverstiment every CRON_TIME seconds
 async def adverstiment_task():
     while True:
-        random_chat_id = r.srandmember( cnf("Chats") )
-        random_adverstiment = r.srandmember("Adverstiments")
-        if random_chat_id == None:
-            print("No chats!")
-        elif random_adverstiment == None:
-            print("No adverstiment!")
-        else:
-            random_chat_id = int(random_chat_id)
-            random_adverstiment = random_adverstiment.decode()
-            try:
+        try:
+            random_chat_id = r.srandmember( cnf("Chats") )
+            random_adverstiment = r.srandmember("Adverstiments")
+            if random_chat_id == None:
+                print("No chats!")
+            elif random_adverstiment == None:
+                print("No adverstiment!")
+            else:
+                random_chat_id = int(random_chat_id)
+                random_adverstiment = random_adverstiment.decode()
                 await client.send_message(random_chat_id, random_adverstiment)
-            except Exception as error:
-                client_has_error(error)
-        
+        except Exception as error
+            client_has_error("Error in adverstiment_task: " + error)
         await asyncio.sleep(CRON_TIME)
 
 try:
