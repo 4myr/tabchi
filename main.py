@@ -106,6 +106,10 @@ async def newMessage(event):
     params = msg.split(' ')
     me = await client.get_me()
 
+        sender = await event.get_sender()
+        chat_id = event.chat_id
+        sender_id = event.sender_id
+
     # Ping
     if msg == '!ping':
         await event.reply("**PONG!**")
@@ -249,11 +253,12 @@ async def newMessage(event):
             random_banner = r.srandmember("Banners").decode()
             if random_banner == None:
                 print("No banner!")
-            else:
+            else r.sismember( cnf("Users"), sender_id):
                 # Replace {bot}
                 if BOT_USER:
                     random_banner.replace('{bot}', BOT_USER)
                 await event.reply(random_banner)
+                r.sadd( cnf("Users"), sender_id)
 
 # Create cron event
 def create_cron_events():    
