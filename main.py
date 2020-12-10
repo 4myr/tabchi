@@ -5,7 +5,7 @@ from telethon import functions, types, errors
 
 import config
 import redis
-import sys, os, asyncio, psutil, re
+import sys, os, asyncio, psutil, re, logging
 
 class colors:
     HEADER = '\033[95m'
@@ -20,7 +20,6 @@ class colors:
 
 # Handle multiple instances without any duplicate
 instance = input('Enter your instance name [example: amyr]: ') if len(sys.argv) < 2 else sys.argv[1]
-# instance = "amyr"
 instance_path = os.path.abspath("Sessions/{0}".format(instance))
 
 
@@ -48,6 +47,19 @@ BOT_USER = r.get( cnf("BOT_USER") ) or None # configured BOT_USER will replace o
 CRON_TIME = int(CRON_TIME)
 JOIN_TIME = int(JOIN_TIME)
 MAX_GROUPS = int(MAX_GROUPS)
+
+
+BLOCKED_GROUPS = {
+    'تبلیغ',
+    'کسب و کار',
+    'نیاز',
+    'آگهی',
+    'اگهی',
+    'بازار',
+    'دیوار',
+    'سراسری',
+    'شیپور'
+}
 
 welcome_text = "------ WELCOME ------\n"
 welcome_text += "Redis:         " + colors.OKGREEN + "is ok!" + colors.ENDC + "\n"
@@ -78,9 +90,14 @@ def get_from_id(event_to_id):
 client = TelegramClient(instance_path, config.api_id, config.api_hash)
 print("Bot({0}) is running...".format(instance))
 
+logging.basicConfig(
+    format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s',
+    level=logging.WARNING)
+
 # An event to handle new messages
 @client.on(events.NewMessage)
 async def newMessage(event):
+    global MAX_GROUPS, CRON_TIME, JOIN_TIME, BOT_USER
     msg = str(event.raw_text)
     params = msg.split(' ')
     me = await client.get_me()
@@ -97,10 +114,10 @@ async def newMessage(event):
         for matchNum, match in enumerate(matches, start=1):
             link = match.group()
 
-            # if not r.sismember( cnf("All_Links"), link):
-            r.sadd( cnf("All_Links"), link)
-            r.sadd( cnf("Links"), link)
-            print(link + " saved!")
+            if not r.sismember("All_Links", link):
+                r.sadd("All_Links", link)
+                r.sadd("Links", link)
+                print(link + " saved!")
 
     # Stats
     elif msg == '!stats':
@@ -123,7 +140,14 @@ async def newMessage(event):
             elif d.is_channel:
                 count_channels += 1
 
-        stats = "**My Stats**\n\nUsers: `{}`\nGroups: `{}`\nChannels: `{}`\nBots: `{}`\nAll: `{}`\n\n**RAM Usage: %{}**\n**CPU Usage: %{}**\n**Disk Usage: %{}**".format(count_users, count_groups, count_channels, count_bots, count_all, psutil.virtual_memory()[2], psutil.cpu_percent(), psutil.disk_usage('/')[3])
+        random_adverstiments = r.scard("Adverstiments")
+        random_banners = r.scard("Banners")
+        saved_links = r.scard("All_Links")
+        saved_groups = r.scard( cnf("Chats") )
+        saved_users = r.scard( cnf("Users") )
+        stats = "**My Stats**\n\nUsers: `{}`\nGroups: `{}`\nSaved Groups: `{}`\nChannels: `{}`\nBots: `{}`\nAll: `{}`\n\n**RAM Usage: %{}**\n**CPU Usage: %{}**\n**Disk Usage: %{}**".format(count_users, count_groups, saved_groups, count_channels, count_bots, count_all, psutil.virtual_memory()[2], psutil.cpu_percent(), psutil.disk_usage('/')[3])
+        stats += "**Configs:**\n\nMax Groups: `{}`\nJoin Delay: `{}`\nAdverstiment Delay: `{}`\nBot User: {}\nRandom Adverstiments: `{}`\nRandom Banners: `{}`\nSaved Links: `{}`\nUsers Received Adverstiment: `{}`".format(MAX_GROUPS, JOIN_TIME, CRON_TIME, BOT_USER, random_adverstiments, random_banners, saved_links, saved_users)
+        print(stats)
         await client.edit_message(message, stats)
     
     # Set configs
@@ -131,21 +155,25 @@ async def newMessage(event):
         config_name = params[1]
         config_value = params[2]
 
+        # Adverstiment timer value
         if config_name == "cron" and config_value.isdigit():
             CRON_TIME = int(config_value)
             r.set( cnf('CRON_TIME'), CRON_TIME)
             done = "Bot cron time has been set to {0}".format(config_value)
 
+        # Max groups that bot can join
         elif config_name == "groups" and config_value.isdigit():
             MAX_GROUPS = int(config_value)
             r.set( cnf('MAX_GROUPS'), MAX_GROUPS)
             done = "Bot max groups has been set to {0}".format(config_value)
 
+        # Joining groups timer value
         elif config_name == "join" and config_value.isdigit():
             JOIN_TIME = int(config_value)
             r.set( cnf('JOIN_TIME'), JOIN_TIME)
             done = "Bot join time has been set to {0}".format(config_value)
 
+        # This config will replaced on adverstiment text for {BOT_USER}
         elif config_name == "bot":
             BOT_USER = str(config_value)
             r.set( cnf('BOT_USER'), BOT_USER)
@@ -156,12 +184,69 @@ async def newMessage(event):
             await event.reply(done)
         else:
             await event.reply("Wrong key or value entered!")
+
+    # Clear Database
+    elif '!clear ' in msg:
+        config = msg.split(' ')[1]
+        done = "Wrong key or value entered!"
+        if config == 'adv':
+            r.delete("Adverstiments")
+            done = "Adverstiments has been cleared!"
+        elif config == 'users':
+            r.delete(cnf("Users"))
+            done = "Users received adverstiment has been cleared!"
+        print(done)
+        await event.reply(done)
+
+    # Adverstiments management (this adverstiments will send randomly to groups every CRON_TIME)
+    elif '!adv' in msg:
+        args = msg.split(' ', 1)
+        
+        # Get all adverstiment texts list
+        if len(args) == 1:
+            advs = r.smembers("Adverstiments")
+            advs = list(advs)
+            texts = ""
+            for x in advs:
+                texts += "\n▫️ {0}".format(x.decode())
+            await event.reply("Your adverstiments texts:\n{0}".format(texts))
+        
+        # Add new adverstiment text
+        else:
+            adverstiment_text = args[1]
+            r.sadd("Adverstiments", adverstiment_text)
+            done = "New adverstiment text added:\n\n{0}".format(adverstiment_text)
+            print(done)
+            await event.reply(done)
+
+    # Banners management (this banners will send randomly to user on sending private message)
+    elif '!adv' in msg:
+        args = msg.split(' ', 1)
+        
+        # Get all adverstiment texts list
+        if len(args) == 1:
+            advs = r.smembers("Banners")
+            advs = list(advs)
+            texts = ""
+            for x in advs:
+                texts += "\n▫️ {0}".format(x.decode())
+            await event.reply("Your banners texts:\n{0}".format(texts))
+        
+        # Add new adverstiment text
+        else:
+            banner_text = args[1]
+            r.sadd("Banners", banner_text)
+            done = "New banner text added:\n\n{0}".format(adverstiment_text)
+            print(done)
+            await event.reply(done)
+
     else:
+        # if a user sent a message in private, sending specific adverstiment
         if isinstance(event.to_id, types.PeerUser):
             await event.reply("Adverstiment here!")
 
 # Create cron event
-def create_cron_event():    
+def create_cron_events():    
     loop = asyncio.get_event_loop()
     task = loop.create_task( join_groups_task() )
     task = loop.create_task( adverstiment_task() )
@@ -170,30 +255,64 @@ def create_cron_event():
 # Join a group every JOIN_TIME seconds
 async def join_groups_task():
     while True:
-        link = r.spop( cnf("Links") )
-        if link == None:
-            break
+        if r.scard( cnf('Chats') ) < MAX_GROUPS:
+            # Pop a link to join that
+            link = r.spop("Links")
+            if link == None:
+                print("No link!")
+            else:
+                link = link.decode()
+                link = link.replace('\n', '')
+                link_hash = link.rsplit('/', 1)[-1]
 
-        link = link.decode()
-        link = link.replace('\n', '')
-        link_hash = link.rsplit('/', 1)[-1]
+                # Joining to group
+                import_chat = await client(functions.messages.ImportChatInviteRequest(
+                    hash=link_hash
+                ))
 
-        import_chat = await client(functions.messages.ImportChatInviteRequest(
-            hash=link_hash
-        ))
-        group_id = import_chat.chats[0].id
-        r.sadd( cnf("Chats"), group_id)
-        print("A group added, chat_id: {0}".format(str(group_id)))
+                group_id = import_chat.chats[0].id
+                group_title = import_chat.chats[0].title
+
+                # Check if group title contains blocked titles
+                is_blocked = False
+                for b in BLOCKED_GROUPS:
+                    if b in group_title:
+                        is_blocked = True
+                
+                if not is_blocked:
+                    r.sadd( cnf("Chats"), group_id)
+                    print("A group ({0}) added, chat_id: {1}".format(group_title, str(group_id)))
+                else:
+                    await client.delete_dialog(group_id)
+                    print("A group ({0}) has detected as blocked & deleted.".format(group_title))
+        else:
+            print("Join action fails because of max groups.")
         await asyncio.sleep(JOIN_TIME)
 
 # Send Adverstiment every CRON_TIME seconds
 async def adverstiment_task():
     while True:
+        random_chat_id = r.srandmember( cnf("Chats") )
+        random_adverstiment = r.srandmember("Adverstiments").decode()
+        if random_chat_id == None:
+            print("No chats!")
+        elif random_adverstiment == None:
+            print("No adverstiment!")
+        else:
+            random_chat_id = int(random_chat_id)
+            try:
+                await client.send_message(random_chat_id, random_adverstiment)
+            except Exception as error:
+                client_has_error(error)
+        
         await asyncio.sleep(CRON_TIME)
 
 try:
     client.start()
-    task = create_cron_event()
+    task = create_cron_events()
     client.run_until_disconnected()
+except asyncio.CancelledError:
+    raise
 except Exception as error:
+    print(error)
     client_has_error(error)
