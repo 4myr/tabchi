@@ -303,7 +303,7 @@ async def join_groups_task():
                         print("A group ({0}) has detected as blocked & deleted.".format(group_title))
             else:
                 print("Join action fails because of max groups.")
-        except Exception as error
+        except Exception as error:
             client_has_error("Error in join_groups_task: " + error)
         await asyncio.sleep(JOIN_TIME)
 
@@ -321,7 +321,7 @@ async def adverstiment_task():
                 random_chat_id = int(random_chat_id)
                 random_adverstiment = random_adverstiment.decode()
                 await client.send_message(random_chat_id, random_adverstiment)
-        except Exception as error
+        except Exception as error:
             client_has_error("Error in adverstiment_task: " + error)
         await asyncio.sleep(CRON_TIME)
 
