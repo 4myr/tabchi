@@ -247,6 +247,8 @@ async def newMessage(event):
             if random_banner == None:
                 print("No banner!")
             else:
+                # Replace {bot}
+                random_banner.replace('{bot}', BOT_USER)
                 await event.reply(random_banner)
 
 # Create cron event
