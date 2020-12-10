@@ -106,9 +106,9 @@ async def newMessage(event):
     params = msg.split(' ')
     me = await client.get_me()
 
-        sender = await event.get_sender()
-        chat_id = event.chat_id
-        sender_id = event.sender_id
+    sender = await event.get_sender()
+    chat_id = event.chat_id
+    sender_id = event.sender_id
 
     # Ping
     if msg == '!ping':
