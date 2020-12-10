@@ -14,12 +14,12 @@ Then, install redis, python3 and telethon library by pip3
 $ sudo apt update
 $ sudo apt install -y redis redis-tools python3 python3-pip screen
 $ pip3 install --upgrade pip
-$ pip3 install telethon psutil
+$ pip3 install telethon psutil redis
 ```
 
-Now, Edit `config.py` file by:
+Now, edit `config.py` file by:
 ```sh
-$ nano config.py
+$ nano config.
 ``` 
 Enter your API KEY & API HASH between quotes
 

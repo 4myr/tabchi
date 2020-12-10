@@ -39,14 +39,18 @@ if not r.ping():
     exit();
 
 # Initilize variables
-CRON_TIME = r.get( cnf("CRON_TIME") ) or ( 120 and r.set( cnf("CRON_TIME"), 120 ) and print("CRON_TIME has been set to default (120)") )
-JOIN_TIME = r.get( cnf("JOIN_TIME") ) or ( 200 and r.set( cnf("JOIN_TIME"), 200 ) and print("JOIN_TIME has been set to default (200)") )
-MAX_GROUPS = r.get( cnf("MAX_GROUPS") ) or ( 150 and r.set( cnf("MAX_GROUPS"), 150 ) and print("MAX_GROUPS has been set to default (150)") )
+CRON_TIME = r.get( cnf("CRON_TIME") ) or 120
+JOIN_TIME = r.get( cnf("JOIN_TIME") ) or 200
+MAX_GROUPS = r.get( cnf("MAX_GROUPS") ) or 150
 BOT_USER = r.get( cnf("BOT_USER") ) or None # configured BOT_USER will replace on adverstiment texts for {BOT_USER}
 
 CRON_TIME = int(CRON_TIME)
 JOIN_TIME = int(JOIN_TIME)
 MAX_GROUPS = int(MAX_GROUPS)
+
+r.set( cnf("CRON_TIME"), CRON_TIME )
+r.set( cnf("JOIN_TIME"), JOIN_TIME )
+r.set( cnf("MAX_GROUPS"), MAX_GROUPS )
 
 
 BLOCKED_GROUPS = {
