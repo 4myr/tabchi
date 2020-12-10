@@ -303,13 +303,14 @@ async def join_groups_task():
 async def adverstiment_task():
     while True:
         random_chat_id = r.srandmember( cnf("Chats") )
-        random_adverstiment = r.srandmember("Adverstiments").decode()
+        random_adverstiment = r.srandmember("Adverstiments")
         if random_chat_id == None:
             print("No chats!")
         elif random_adverstiment == None:
             print("No adverstiment!")
         else:
             random_chat_id = int(random_chat_id)
+            random_adverstiment = random_adverstiment.decode()
             try:
                 await client.send_message(random_chat_id, random_adverstiment)
             except Exception as error:
