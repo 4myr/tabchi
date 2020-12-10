@@ -304,7 +304,7 @@ async def join_groups_task():
             else:
                 print("Join action fails because of max groups.")
         except Exception as error:
-            client_has_error("Error in join_groups_task: " + error)
+            print("Error in join_groups_task: ", error)
         await asyncio.sleep(JOIN_TIME)
 
 # Send Adverstiment every CRON_TIME seconds
@@ -322,7 +322,7 @@ async def adverstiment_task():
                 random_adverstiment = random_adverstiment.decode()
                 await client.send_message(random_chat_id, random_adverstiment)
         except Exception as error:
-            client_has_error("Error in adverstiment_task: " + error)
+            print("Error in adverstiment_task: ", error)
         await asyncio.sleep(CRON_TIME)
 
 try:
@@ -333,4 +333,3 @@ except asyncio.CancelledError:
     raise
 except Exception as error:
     print(error)
-    client_has_error(error)
