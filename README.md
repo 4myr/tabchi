@@ -47,9 +47,9 @@ $ pip3 install telethon psutil redis
 
 Now, edit `config.py` file by:
 ```sh
-$ nano config.
+$ nano config.py
 ``` 
-Enter your API KEY & API HASH between quotes
+Enter your Telegram Chat ID, API KEY & API HASH between quotes
 
 Then, launch bot using:
 ```sh
