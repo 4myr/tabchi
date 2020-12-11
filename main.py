@@ -288,14 +288,14 @@ async def newMessage(event):
         
         if len(args) == 2:
             if args[1] == 'on' or args[1] == 'off':
-            if args[1] == 'on':
-                JOIN_GROUPS = True
-            else:
-                JOIN_GROUPS = False
-            r.set( cnf("JOIN_GROUPS"), JOIN_GROUPS)
-            done = "Joining groups has been set to {0}".format(args[1])
-            print(done)
-            await event.reply(done)
+                if args[1] == 'on':
+                    JOIN_GROUPS = True
+                else:
+                    JOIN_GROUPS = False
+                r.set( cnf("JOIN_GROUPS"), JOIN_GROUPS)
+                done = "Joining groups has been set to {0}".format(args[1])
+                print(done)
+                await event.reply(done)
     else:
         # if a user sent a message in private, sending specific adverstiment
         if isinstance(event.to_id, types.PeerUser):
