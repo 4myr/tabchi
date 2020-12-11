@@ -53,8 +53,11 @@ Enter your Telegram Chat ID, API KEY & API HASH between quotes
 
 Then, launch bot using:
 ```sh
-$ screen python3 main.py
+$ screen ./launch.sh
 ```
-
+or
+```sh
+python3 main.py [instance_name]
+```
 For first time you must login your account and for next times you don't need login.
 You can use `CTRL + A + D` for deatach screen.
