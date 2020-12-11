@@ -103,7 +103,7 @@ logging.basicConfig(
 # An event to handle new messages
 @client.on(events.NewMessage)
 async def newMessage(event):
-    global MAX_GROUPS, CRON_TIME, JOIN_TIME, BOT_USER
+    global MAX_GROUPS, CRON_TIME, JOIN_TIME, BOT_USER, config
     msg = str(event.raw_text)
     params = msg.split(' ')
     me = await client.get_me()
@@ -258,7 +258,7 @@ async def newMessage(event):
             random_banner = r.srandmember("Banners").decode()
             if random_banner == None:
                 print("No banner!")
-            elif not r.sismember( cnf("Users"), sender_id) and sender_id != config.sudo:
+            elif not r.sismember( cnf("Users"), sender_id) or sender_id == config.sudo:
                 # Replace {bot}
                 if BOT_USER:
                     random_banner = random_banner.replace('{bot}', BOT_USER)
