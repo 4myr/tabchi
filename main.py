@@ -39,21 +39,30 @@ if not r.ping():
     exit();
 
 # Initilize variables
-CRON_TIME = r.get( cnf("CRON_TIME") ) or 120
-JOIN_TIME = r.get( cnf("JOIN_TIME") ) or 200
-MAX_GROUPS = r.get( cnf("MAX_GROUPS") ) or 150
-BOT_USER = r.get( cnf("BOT_USER") ) or None # configured BOT_USER will replace on adverstiment texts for {BOT_USER}
+CRON_TIME   = r.get( cnf("CRON_TIME") ) or 120
+JOIN_TIME   = r.get( cnf("JOIN_TIME") ) or 200
+MAX_GROUPS  = r.get( cnf("MAX_GROUPS") ) or 150
+SEND_ADVERSTIMENT    = r.get( cnf("SEND_ADVERSTIMENT") ) or False
+SEND_BANNER = r.get( cnf("SEND_BANNER") ) or True
+JOIN_GROUPS = r.get( cnf("JOIN_GROUPS") ) or True
+
+BOT_USER    = r.get( cnf("BOT_USER") ) or None # configured BOT_USER will replace on adverstiment texts for {BOT_USER}
 if BOT_USER:
     BOT_USER = BOT_USER.decode()
 
-CRON_TIME = int(CRON_TIME)
-JOIN_TIME = int(JOIN_TIME)
-MAX_GROUPS = int(MAX_GROUPS)
+CRON_TIME   = int(CRON_TIME)
+JOIN_TIME   = int(JOIN_TIME)
+MAX_GROUPS  = int(MAX_GROUPS)
+SEND_ADVERSTIMENT    = bool(SEND_ADVERSTIMENT)
+SEND_BANNER = bool(SEND_BANNER)
+JOIN_GROUPS = bool(JOIN_GROUPS)
 
 r.set( cnf("CRON_TIME"), CRON_TIME )
 r.set( cnf("JOIN_TIME"), JOIN_TIME )
 r.set( cnf("MAX_GROUPS"), MAX_GROUPS )
-
+r.set( cnf("SEND_ADVERSTIMENT"), SEND_ADVERSTIMENT )
+r.set( cnf("SEND_BANNER"), SEND_BANNER )
+r.set( cnf("JOIN_GROUPS"), JOIN_GROUPS )
 
 BLOCKED_GROUPS = {
     'تبلیغ',
@@ -111,9 +120,6 @@ async def newMessage(event):
     chat_id = event.chat_id
     sender_id = event.sender_id
 
-    # Ping
-    if msg == '!ping' and sender_id == config.sudo:
-        await event.reply("**PONG!**")
     
     # Detecting links & save to join later
     if ('t.me' in msg or 'telegram.me' in msg) and '/joinchat' in msg and 'AAAAA' not in msg:
@@ -128,7 +134,11 @@ async def newMessage(event):
                 r.sadd("Links", link)
                 print(link + " saved!")
 
-    # Stats
+    # Ping (!ping)
+    elif msg == '!ping' and sender_id == config.sudo:
+        await event.reply("**PONG!**")
+
+    # Stats (!stats)
     elif msg == '!stats' and sender_id == config.sudo:
         message = await event.reply("**Loading stats...**")
         dialogs = await client.get_dialogs()
@@ -158,7 +168,7 @@ async def newMessage(event):
         stats += "**Configs:**\n\nMax Groups: `{}`\nJoin Delay: `{}`\nAdverstiment Delay: `{}`\nBot User: {}\nRandom Adverstiments: `{}`\nRandom Banners: `{}`\nSaved Links: `{}`\nUsers Received Adverstiment: `{}`".format(MAX_GROUPS, JOIN_TIME, CRON_TIME, BOT_USER, random_adverstiments, random_banners, saved_links, saved_users)
         await client.edit_message(message, stats)
     
-    # Set configs
+    # Set configs (!set [cron|groups|join|bot] [value])
     elif '!set ' in msg and isinstance(params[1], str) and params[2] and sender_id == config.sudo:
         config_name = params[1]
         config_value = params[2]
@@ -193,7 +203,7 @@ async def newMessage(event):
         else:
             await event.reply("Wrong key or value entered!")
 
-    # Clear Database
+    # Clear Database (!clear [adv|users|banner])
     elif '!clear ' in msg and sender_id == config.sudo:
         config = msg.split(' ')[1]
         done = "Wrong key or value entered!"
@@ -209,7 +219,7 @@ async def newMessage(event):
         print(done)
         await event.reply(done)
 
-    # Adverstiments management (this adverstiments will send randomly to groups every CRON_TIME)
+    # Adverstiments management (this adverstiments will send randomly to groups every CRON_TIME) (!adv [on|off] or !adv [text] or !adv)
     elif '!adv' in msg and sender_id == config.sudo:
         args = msg.split(' ', 1)
         
@@ -222,6 +232,17 @@ async def newMessage(event):
                 texts += "\n▫️ {0}".format(x.decode())
             await event.reply("Your adverstiments texts:\n{0}".format(texts))
         
+        # Set on or off
+        elif args[1] == 'on' or args[1] == 'off':
+            if args[1] == 'on':
+                SEND_ADVERSTIMENT = True
+            else:
+                SEND_ADVERSTIMENT = False
+            r.set( cnf("SEND_ADVERSTIMENT"), SEND_ADVERSTIMENT)
+            done = "Sending adverstiment has been set to {0}".format(args[1])
+            print(done)
+            await event.reply(done)
+
         # Add new adverstiment text
         else:
             adverstiment_text = args[1]
@@ -230,7 +251,7 @@ async def newMessage(event):
             print(done)
             await event.reply(done)
 
-    # Banners management (this banners will send randomly to user on sending private message)
+    # Banners management (this banners will send randomly to user on sending private message) (!banner [on|off] or !banner [text] or !banner)
     elif '!banner' in msg and sender_id == config.sudo:
         args = msg.split(' ', 1)
         
@@ -243,6 +264,16 @@ async def newMessage(event):
                 texts += "\n▫️ {0}".format(x.decode())
             await event.reply("Your banners texts:\n{0}".format(texts))
         
+        # Set on or off
+        elif args[1] == 'on' or args[1] == 'off':
+            if args[1] == 'on':
+                SEND_BANNER = True
+            else:
+                SEND_BANNER = False
+            r.set( cnf("SEND_BANNER"), SEND_BANNER)
+            done = "Sending banner has been set to {0}".format(args[1])
+            print(done)
+            await event.reply(done)
         # Add new banner text
         else:
             banner_text = args[1]
@@ -251,6 +282,20 @@ async def newMessage(event):
             print(done)
             await event.reply(done)
 
+    # Set group join on or off (!join [on|off])
+    elif '!join' in msg and sender_id == config.sudo:
+        args = msg.split(' ', 1)
+        
+        if len(args) == 2:
+            if args[1] == 'on' or args[1] == 'off':
+            if args[1] == 'on':
+                JOIN_GROUPS = True
+            else:
+                JOIN_GROUPS = False
+            r.set( cnf("JOIN_GROUPS"), JOIN_GROUPS)
+            done = "Joining groups has been set to {0}".format(args[1])
+            print(done)
+            await event.reply(done)
     else:
         # if a user sent a message in private, sending specific adverstiment
         if isinstance(event.to_id, types.PeerUser):
@@ -258,7 +303,7 @@ async def newMessage(event):
             random_banner = r.srandmember("Banners").decode()
             if random_banner == None:
                 print("No banner!")
-            elif not r.sismember( cnf("Users"), sender_id) or sender_id == config.sudo:
+            elif ( not r.sismember( cnf("Users"), sender_id) or sender_id == config.sudo ) and SEND_BANNER:
                 # Replace {bot}
                 if BOT_USER:
                     random_banner = random_banner.replace('{bot}', BOT_USER)
@@ -276,7 +321,7 @@ def create_cron_events():
 async def join_groups_task():
     while True:
         try:
-            if r.scard( cnf('Chats') ) < MAX_GROUPS:
+            if r.scard( cnf('Chats') ) < MAX_GROUPS and JOIN_GROUPS:
                 # Pop a link to join that
                 link = r.spop("Links")
                 if link == None:
@@ -307,7 +352,7 @@ async def join_groups_task():
                         await client.delete_dialog(group_id)
                         print("A group ({0}) has detected as blocked & deleted.".format(group_title))
             else:
-                print("Join action fails because of max groups.")
+                print("Join action fails because of max groups or join is disabled.")
         except Exception as error:
             print("Error in join_groups_task: ", error)
         await asyncio.sleep(JOIN_TIME)
@@ -315,22 +360,25 @@ async def join_groups_task():
 # Send Adverstiment every CRON_TIME seconds
 async def adverstiment_task():
     while True:
-        random_chat_id = r.srandmember( cnf("Chats") )
-        try:
-            random_adverstiment = r.srandmember("Adverstiments")
-            if random_chat_id == None:
-                print("No chats!")
-            elif random_adverstiment == None:
-                print("No adverstiment!")
-            else:
-                random_chat_id = int(random_chat_id)
-                random_adverstiment = random_adverstiment.decode()
-                await client.send_message(random_chat_id, random_adverstiment)
-        except Exception as error:
-            print("Leaving a group because of error!")
-            r.srem( cnf("Chats"), random_chat_id)
-            await client.delete_dialog(random_chat_id)
-            print("Error in adverstiment_task: ", error)
+        if SEND_ADVERSTIMENT:
+            random_chat_id = r.srandmember( cnf("Chats") )
+            try:
+                random_adverstiment = r.srandmember("Adverstiments")
+                if random_chat_id == None:
+                    print("No chats!")
+                elif random_adverstiment == None:
+                    print("No adverstiment!")
+                else:
+                    random_chat_id = int(random_chat_id)
+                    random_adverstiment = random_adverstiment.decode()
+                    await client.send_message(random_chat_id, random_adverstiment)
+            except Exception as error:
+                print("Leaving a group because of error!")
+                r.srem( cnf("Chats"), random_chat_id)
+                await client.delete_dialog(random_chat_id)
+                print("Error in adverstiment_task: ", error)
+        else:
+            print("Send adverstiment disabled!")
         await asyncio.sleep(CRON_TIME)
 
 try:
