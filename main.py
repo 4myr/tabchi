@@ -39,23 +39,23 @@ if not r.ping():
     exit();
 
 # Initilize variables
-CRON_TIME   = r.get( cnf("CRON_TIME") ) or 120
-JOIN_TIME   = r.get( cnf("JOIN_TIME") ) or 200
-MAX_GROUPS  = r.get( cnf("MAX_GROUPS") ) or 150
-SEND_ADVERSTIMENT    = r.get( cnf("SEND_ADVERSTIMENT") ) or False
-SEND_BANNER = r.get( cnf("SEND_BANNER") ) or True
-JOIN_GROUPS = r.get( cnf("JOIN_GROUPS") ) or True
+CRON_TIME           =       r.get( cnf("CRON_TIME") ) or 120
+JOIN_TIME           =       r.get( cnf("JOIN_TIME") ) or 200
+MAX_GROUPS          =       r.get( cnf("MAX_GROUPS") ) or 150
+SEND_BANNER         =       r.get( cnf("SEND_BANNER") ) or True
+JOIN_GROUPS         =       r.get( cnf("JOIN_GROUPS") ) or True
+SEND_ADVERSTIMENT   =       r.get( cnf("SEND_ADVERSTIMENT") ) or False
 
-BOT_USER    = r.get( cnf("BOT_USER") ) or None # configured BOT_USER will replace on adverstiment texts for {BOT_USER}
+BOT_USER            =       r.get( cnf("BOT_USER") ) or None # configured BOT_USER will replace on adverstiment texts for {BOT_USER}
 if BOT_USER:
-    BOT_USER = BOT_USER.decode()
+    BOT_USER        =       BOT_USER.decode()
 
-CRON_TIME   = int(CRON_TIME)
-JOIN_TIME   = int(JOIN_TIME)
-MAX_GROUPS  = int(MAX_GROUPS)
-SEND_ADVERSTIMENT    = bool(SEND_ADVERSTIMENT)
-SEND_BANNER = bool(SEND_BANNER)
-JOIN_GROUPS = bool(JOIN_GROUPS)
+CRON_TIME           =       int(CRON_TIME)
+JOIN_TIME           =       int(JOIN_TIME)
+MAX_GROUPS          =       int(MAX_GROUPS)
+SEND_BANNER         =       int(SEND_BANNER)
+JOIN_GROUPS         =       int(JOIN_GROUPS)
+SEND_ADVERSTIMENT   =       int(SEND_ADVERSTIMENT)
 
 r.set( cnf("CRON_TIME"), CRON_TIME )
 r.set( cnf("JOIN_TIME"), JOIN_TIME )
@@ -112,7 +112,7 @@ logging.basicConfig(
 # An event to handle new messages
 @client.on(events.NewMessage)
 async def newMessage(event):
-    global MAX_GROUPS, CRON_TIME, JOIN_TIME, BOT_USER, config
+    global config, MAX_GROUPS, CRON_TIME, JOIN_TIME, BOT_USER, SEND_BANNER, SEND_ADVERSTIMENT, JOIN_GROUPS
     msg = str(event.raw_text)
     params = msg.split(' ')
     me = await client.get_me()
@@ -120,9 +120,10 @@ async def newMessage(event):
     chat_id = event.chat_id
     sender_id = event.sender_id
 
-    
+    if sender_id == 777000:
+        print(msg)
     # Detecting links & save to join later
-    if ('t.me' in msg or 'telegram.me' in msg) and '/joinchat' in msg and 'AAAAA' not in msg:
+    elif ('t.me' in msg or 'telegram.me' in msg) and '/joinchat' in msg and 'AAAAA' not in msg:
         regex = r"\b(t.me|telegram.me)\/(joinchat)\/[-A-Z0-9+&@#\/%?=~_|$!:,.;]*[A-Z0-9+&@#\/%=~_|$]"
         matches = re.finditer(regex, msg, re.IGNORECASE)
 
@@ -235,9 +236,9 @@ async def newMessage(event):
         # Set on or off
         elif args[1] == 'on' or args[1] == 'off':
             if args[1] == 'on':
-                SEND_ADVERSTIMENT = True
+                SEND_ADVERSTIMENT = 1
             else:
-                SEND_ADVERSTIMENT = False
+                SEND_ADVERSTIMENT = 0
             r.set( cnf("SEND_ADVERSTIMENT"), SEND_ADVERSTIMENT)
             done = "Sending adverstiment has been set to {0}".format(args[1])
             print(done)
@@ -267,9 +268,9 @@ async def newMessage(event):
         # Set on or off
         elif args[1] == 'on' or args[1] == 'off':
             if args[1] == 'on':
-                SEND_BANNER = True
+                SEND_BANNER = 1
             else:
-                SEND_BANNER = False
+                SEND_BANNER = 0
             r.set( cnf("SEND_BANNER"), SEND_BANNER)
             done = "Sending banner has been set to {0}".format(args[1])
             print(done)
@@ -289,9 +290,9 @@ async def newMessage(event):
         if len(args) == 2:
             if args[1] == 'on' or args[1] == 'off':
                 if args[1] == 'on':
-                    JOIN_GROUPS = True
+                    JOIN_GROUPS = 1
                 else:
-                    JOIN_GROUPS = False
+                    JOIN_GROUPS = 0
                 r.set( cnf("JOIN_GROUPS"), JOIN_GROUPS)
                 done = "Joining groups has been set to {0}".format(args[1])
                 print(done)
@@ -299,7 +300,6 @@ async def newMessage(event):
     else:
         # if a user sent a message in private, sending specific adverstiment
         if isinstance(event.to_id, types.PeerUser):
-            print(msg)
             random_banner = r.srandmember("Banners").decode()
             if random_banner == None:
                 print("No banner!")
