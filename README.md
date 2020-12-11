@@ -12,6 +12,7 @@ An adverstiment telegram bot that developed by [Telethon](https://github.com/Lon
   - Set delay for joining groups & sending adverstiment to groups
   - Send adverstiment only once per user
   - Detecting & Block adverstiment and not usable supergroups
+  - Sharing configs & data between multiple accounts
   
 ---
 ### Commands:
