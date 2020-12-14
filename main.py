@@ -114,6 +114,8 @@ logging.basicConfig(
 async def newMessage(event):
     global config, MAX_GROUPS, CRON_TIME, JOIN_TIME, BOT_USER, SEND_BANNER, SEND_ADVERSTIMENT, JOIN_GROUPS
     msg = str(event.raw_text)
+    if isinstance(msg, str):
+        msg = msg.lower()
     params = msg.split(' ')
     me = await client.get_me()
     sender = await event.get_sender()
