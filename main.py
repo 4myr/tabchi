@@ -101,6 +101,10 @@ def get_from_id(event_to_id):
 
     return to_id
 
+# Check message has link
+def has_link(msg):
+    return ( ('t.me' in msg or 'telegram.me' in msg) and '/joinchat' in msg and 'AAAAA' not in msg )
+
 # Telethon client start
 client = TelegramClient(instance_path, config.api_id, config.api_hash)
 print("Bot({0}) is running...".format(instance))
@@ -114,7 +118,7 @@ logging.basicConfig(
 async def newMessage(event):
     global config, MAX_GROUPS, CRON_TIME, JOIN_TIME, BOT_USER, SEND_BANNER, SEND_ADVERSTIMENT, JOIN_GROUPS
     msg = str(event.raw_text)
-    if isinstance(msg, str):
+    if isinstance(msg, str) and not has_link(msg):
         msg = msg.lower()
     params = msg.split(' ')
     me = await client.get_me()
@@ -125,7 +129,7 @@ async def newMessage(event):
     if sender_id == 777000:
         print(msg)
     # Detecting links & save to join later
-    elif ('t.me' in msg or 'telegram.me' in msg) and '/joinchat' in msg and 'AAAAA' not in msg:
+    elif 
         regex = r"\b(t.me|telegram.me)\/(joinchat)\/[-A-Z0-9+&@#\/%?=~_|$!:,.;]*[A-Z0-9+&@#\/%=~_|$]"
         matches = re.finditer(regex, msg, re.IGNORECASE)
 
