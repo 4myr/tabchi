@@ -129,7 +129,7 @@ async def newMessage(event):
     if sender_id == 777000:
         print(msg)
     # Detecting links & save to join later
-    elif 
+    elif has_link(msg):
         regex = r"\b(t.me|telegram.me)\/(joinchat)\/[-A-Z0-9+&@#\/%?=~_|$!:,.;]*[A-Z0-9+&@#\/%=~_|$]"
         matches = re.finditer(regex, msg, re.IGNORECASE)
 
