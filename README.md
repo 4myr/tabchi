@@ -5,13 +5,14 @@ An adverstiment telegram bot that developed by [Telethon](https://github.com/Lon
 ### Features:
   - Gathering supergroups invite links
   - Joining supergroups
-  - Send random adverstiment to groups
+  - Send random advertisement to groups
   - Send random banner to private chats\
-  - Enable/disable Joining groups, Sending Adverstiment, Sending Banners
+  - Enable/disable Joining groups, Sending advertisement, Sending Banners
+  - Prevent joining channels
   - Set maximum groups
-  - Set delay for joining groups & sending adverstiment to groups
-  - Send adverstiment only once per user
-  - Detecting & Block adverstiment and not usable supergroups
+  - Set delay for joining groups & sending advertisement to groups
+  - Send advertisement only once per user
+  - Detecting & Block advertisement and not usable supergroups
   - Sharing configs & data between multiple accounts
   
 ---
@@ -61,4 +62,4 @@ or
 python3 main.py [instance_name]
 ```
 For first time you must login your account and for next times you don't need login.
-You can use `CTRL + A + D` for deatach screen.
+You can use `CTRL + A + D` for deattach screen.
